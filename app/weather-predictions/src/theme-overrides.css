@@ -1,0 +1,11 @@
+/* Claro (por defecto) */
+:root {
+    --p-content-background: red;
+}
+
+/* Oscuro según el SO */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --p-content-background: #385fad;
+    }
+}
