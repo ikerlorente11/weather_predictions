@@ -4,6 +4,8 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import WeatherDayCard from '../components/WeatherDayCard.vue'
 
+const API_BASE = import.meta.env.VITE_API_URL
+
 const route = useRoute()
 
 const city = ref('')                // ciudad visible en la UI
@@ -21,7 +23,7 @@ async function fetchWeather() {
   error.value = null
   try {
     const q = encodeURIComponent(city.value)
-    const res = await fetch(`https://weather-predictions.iker-e38.workers.dev/?city=${q}`)
+    const res = await fetch(`${API_BASE}?city=${q}`)
     if (!res.ok) throw new Error('No se pudo obtener el tiempo')
     weather.value = await res.json()
     document.title = `${weather.value.city} · El tiempo`
@@ -54,28 +56,27 @@ watch(() => route.params.city, () => {
     <div v-if="loading">Cargando…</div>
     <div v-else-if="error">❌ {{ error }}</div>
 
-    <WeatherDayCard
-      v-else
-      v-for="(d, i) in weather.days"
-      :key="i"
-      :day="d"
-      :city="weather.city"
-    />
+    <WeatherDayCard v-else v-for="(d, i) in weather.days" :key="i" :day="d" :city="weather.city" />
   </div>
 </template>
 
 <style scoped>
-.title{
+.title {
   padding: .5rem 2rem;
   font-size: 1.5rem;
   line-height: 1.2;
   border-radius: 8px;
   background: var(--p-content-background);
 }
-h1{ margin: 0; }
+
+h1 {
+  margin: 0;
+}
 
 /* Si usas dark por sistema; si usas .dark, cámbialo por .dark .title */
 @media (prefers-color-scheme: dark) {
-  .title { --p-content-background: #424242; }
+  .title {
+    --p-content-background: #424242;
+  }
 }
 </style>
