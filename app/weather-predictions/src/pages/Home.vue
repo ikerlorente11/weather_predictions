@@ -121,16 +121,16 @@ watch(() => route.params.city, () => {
   value.value = ''
 })
 
-watch(visible, async (v) => {
-  if (v) {
-    await nextTick()
-    const input = autoCompleteRef.value?.$el.querySelector('input')
-    if (input) {
-      input.focus()
-      input.select() // opcional: selecciona todo el texto
-    }
-  }
-})
+// watch(visible, async (v) => {
+//   if (v) {
+//     await nextTick()
+//     const input = autoCompleteRef.value?.$el.querySelector('input')
+//     if (input) {
+//       input.focus()
+//       input.select() // opcional: selecciona todo el texto
+//     }
+//   }
+// })
 </script>
 
 <template>
