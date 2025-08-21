@@ -2,7 +2,12 @@
 import { computed, ref, onMounted, nextTick, watch } from 'vue'
 import Card from 'primevue/card'
 import Avatar from 'primevue/avatar'
-import TabView from 'primevue/tabview'
+
+/* PrimeVue v4 Tabs API */
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 
 const props = defineProps({
@@ -15,19 +20,18 @@ const fmtDate = computed(() => {
     const d = new Date(props.day.datetime)
     return new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }).format(d)
 })
-
 const sunrise = computed(() => props.day.sunrise?.slice(0, 5) || '--:--')
 const sunset = computed(() => props.day.sunset?.slice(0, 5) || '--:--')
 
 /* ===== Tabs de métricas ===== */
 const tabs = [
-    { label: 'Temperatura', key: 'temp' },
-    { label: 'Viento', key: 'wind' },
-    { label: 'Radiación', key: 'rad' },
-    { label: 'Nieve', key: 'snow' }
+    { label: 'Temperatura', key: 'temp', value: 0 },
+    { label: 'Viento', key: 'wind', value: 1 },
+    { label: 'Radiación', key: 'rad', value: 2 },
+    { label: 'Nieve', key: 'snow', value: 3 }
 ]
-const activeIndex = ref(0)
-const activeKey = computed(() => tabs[activeIndex.value]?.key ?? 'temp')
+const active = ref(0) // índice activo en <Tabs>
+const activeKey = computed(() => tabs.find(t => t.value === active.value)?.key ?? 'temp')
 
 /* ===== Mostrar/ocultar contenido ===== */
 const expanded = ref(false)
@@ -55,7 +59,6 @@ function findCurrentHourIndex() {
     })
     return best
 }
-
 async function triggerScrollToCurrentHour() {
     if (!isToday.value) return
     await nextTick()
@@ -65,7 +68,6 @@ async function triggerScrollToCurrentHour() {
         el.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
     }
 }
-
 watch(() => props.day?.hours, async () => {
     if (expanded.value) {
         hourEls.value = []
@@ -73,12 +75,9 @@ watch(() => props.day?.hours, async () => {
         triggerScrollToCurrentHour()
     }
 })
+onMounted(() => { hourEls.value = [] })
 
-onMounted(async () => {
-    hourEls.value = []
-})
-
-/* ===== Utilidades de representación por métrica ===== */
+/* ===== Utilidades ===== */
 function degToCompass(deg) {
     if (deg == null || isNaN(deg)) return '—'
     const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO']
@@ -115,10 +114,16 @@ function degToCompass(deg) {
         <template #content>
             <transition name="collapse">
                 <div v-show="expanded" id="card-content" class="content-wrap">
-                    <!-- Tabs PrimeVue -->
-                    <TabView v-model:activeIndex="activeIndex" class="metric-tabs">
-                        <TabPanel v-for="(t, i) in tabs" :key="t.key" :header="t.label" />
-                    </TabView>
+                    <!-- Tabs PrimeVue v4 con scrollable -->
+                    <Tabs v-model:value="active" scrollable class="metric-tabs">
+                        <TabList>
+                            <Tab v-for="t in tabs" :key="t.key" :value="t.value">{{ t.label }}</Tab>
+                        </TabList>
+                        <!-- Paneles (no mostramos contenido aquí, solo headers; el contenido va en las pastillas) -->
+                        <TabPanels>
+                            <TabPanel v-for="t in tabs" :key="t.key" :value="t.value" />
+                        </TabPanels>
+                    </Tabs>
 
                     <!-- Carrusel horizontal por horas -->
                     <div class="hours-scroller mt-2" aria-label="Predicción por horas">
@@ -126,7 +131,7 @@ function degToCompass(deg) {
                             :ref="el => { if (el) hourEls[idx] = el }">
                             <span class="hour">{{ h.datetime.slice(0, 5) }}</span>
 
-                            <!-- Contenido dinámico según pestaña seleccionada -->
+                            <!-- Contenido dinámico según pestaña -->
                             <template v-if="activeKey === 'temp'">
                                 <img :src="h.icon" class="icon-hour" :alt="h.conditions" />
                                 <span class="temp">{{ Math.round(h.temp) }}°</span>
@@ -137,8 +142,7 @@ function degToCompass(deg) {
 
                             <template v-else-if="activeKey === 'wind'">
                                 <i class="fa-solid fa-arrow-up big-icon" aria-hidden="true"
-                                    :style="{ transform: `rotate(${h.winddir}deg)`, margin: '6px auto' }">
-                                </i>
+                                    :style="{ transform: `rotate(${h.winddir}deg)`, margin: '6px auto' }"></i>
                                 <span class="val flex flex-column">
                                     <span>{{ Math.round(h.windspeed ?? 0) }}</span>
                                     <span>km/h</span>
@@ -152,21 +156,17 @@ function degToCompass(deg) {
                                     <span>{{ Math.round(h.solarradiation ?? 0) }}</span>
                                     <span>W/m²</span>
                                 </span>
-                                <span class="pp" :title="'Índice UV'">
-                                    UV {{ Math.round(h.uvindex ?? 0) }}
-                                </span>
+                                <span class="pp" :title="'Índice UV'">UV {{ Math.round(h.uvindex ?? 0) }}</span>
                             </template>
 
-                            <template v-else> <!-- snow -->
+                            <template v-else>
                                 <i class="fa-regular fa-snowflake big-icon" aria-hidden="true"
                                     :style="{ margin: '6px auto' }"></i>
                                 <span class="val flex flex-row" style="justify-content: center; gap: 1px;">
                                     <span>{{ Math.round(h.snow ?? 0) }}</span>
-                                    <span>%</span>
+                                    <span>mm</span>
                                 </span>
-                                <span class="pp" :title="'Espesor de nieve'">
-                                    {{ h.snowdepth ?? 0 }} mm
-                                </span>
+                                <span class="pp" :title="'Espesor de nieve'">{{ h.snowdepth ?? 0 }} mm</span>
                             </template>
                         </div>
                     </div>
@@ -248,14 +248,14 @@ function degToCompass(deg) {
     margin-top: .25rem;
 }
 
-/* Carrusel horas compacto */
+/* Carrusel horas */
 .hours-scroller {
     display: flex;
     gap: .5rem;
     overflow-x: auto;
     padding: .25rem;
     scroll-snap-type: x proximity;
-    scroll-padding-left: 0.15rem;
+    scroll-padding-left: .15rem;
     scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
 }
 
@@ -276,10 +276,8 @@ function degToCompass(deg) {
     text-align: center;
     border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
     background: var(--p-content-background, var(--p-surface-0, #fff));
-    box-shadow:
-        0 2px 10px color-mix(in oklab, #000 12%, transparent),
-        0 1px 0 color-mix(in oklab, #fff 6%, transparent);
-    scroll-margin-left: 0.15rem;
+    box-shadow: 0 2px 10px color-mix(in oklab, #000 12%, transparent), 0 1px 0 color-mix(in oklab, #fff 6%, transparent);
+    scroll-margin-left: .15rem;
 }
 
 .hour-pill:hover {
@@ -305,14 +303,7 @@ function degToCompass(deg) {
     color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
 }
 
-.temp {
-    display: block;
-    font-weight: 700;
-    font-size: .85rem;
-    margin-top: .05rem;
-    color: var(--p-text-color, currentColor);
-}
-
+.temp,
 .val {
     display: block;
     font-weight: 700;
@@ -329,8 +320,8 @@ function degToCompass(deg) {
     color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
 }
 
-/* Ajustes móviles */
-@media (max-width: 320px) {
+/* Móviles */
+@media (max-width:320px) {
     .temp-day {
         font-size: 1.35rem;
     }
@@ -340,21 +331,28 @@ function degToCompass(deg) {
     }
 }
 
+/* Modo oscuro */
 @media (prefers-color-scheme: dark) {
     * {
         --p-content-background: #424242;
-        --p-tabview-tab-list-background: #424242;
-        --p-tabview-tab-panel-background: #424242;
+        --p-tabs-tablist-background: #424242;
+        --p-tabs-tabpanel-background: #424242;
+        --p-tabs-tab-background: #424242;
+        --p-tabs-tab-active-background: #424242;
+        --p-tabs-tab-active-color: var(--p-text-color);
+        --p-tabs-nav-button-background: #424242;
+        --p-tabs-nav-button-shadow: 0px 0px 10px 1px color-mix(in srgb, var(--p-content-background), transparent 50%);
+        --p-tabs-nav-button-width: 1rem;
     }
 }
 </style>
 
 <style>
-.p-tabview-tab-header {
-    padding: 5px 8px !important;
+.p-tab {
+    padding: 5px 11px !important;
 }
 
-.p-tabview-panels {
+.p-tabpanels {
     display: none;
 }
 </style>
