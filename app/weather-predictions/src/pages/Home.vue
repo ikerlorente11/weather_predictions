@@ -121,6 +121,7 @@ watch(() => route.params.city, () => {
   value.value = ''
 })
 
+// Focus on city input
 // watch(visible, async (v) => {
 //   if (v) {
 //     await nextTick()

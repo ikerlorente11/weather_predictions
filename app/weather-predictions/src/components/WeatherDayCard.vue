@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref, onMounted, nextTick, watch } from 'vue'
 import Card from 'primevue/card'
-import Tag from 'primevue/tag'
 import Avatar from 'primevue/avatar'
-import Divider from 'primevue/divider'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
 
 const props = defineProps({
     day: { type: Object, required: true },
@@ -19,6 +19,16 @@ const fmtDate = computed(() => {
 const sunrise = computed(() => props.day.sunrise?.slice(0, 5) || '--:--')
 const sunset = computed(() => props.day.sunset?.slice(0, 5) || '--:--')
 
+/* ===== Tabs de métricas ===== */
+const tabs = [
+    { label: 'Temperatura', key: 'temp' },
+    { label: 'Viento', key: 'wind' },
+    { label: 'Radiación', key: 'rad' },
+    { label: 'Nieve', key: 'snow' }
+]
+const activeIndex = ref(0)
+const activeKey = computed(() => tabs[activeIndex.value]?.key ?? 'temp')
+
 /* ===== Mostrar/ocultar contenido ===== */
 const expanded = ref(false)
 function toggle() {
@@ -31,15 +41,12 @@ const toLocalYYYYMMDD = (d = new Date()) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const isToday = computed(() => props.day?.datetime === toLocalYYYYMMDD())
 
-// refs a cada pastilla de hora
 const hourEls = ref([])
-// índice de la hora actual (o la más cercana)
 function findCurrentHourIndex() {
     if (!props.day?.hours?.length) return null
     const nowH = new Date().getHours()
     let idx = props.day.hours.findIndex(h => Number(h.datetime.slice(0, 2)) === nowH)
     if (idx !== -1) return idx
-    // más cercano si no hay exacto
     let best = 0, bestDiff = Infinity
     props.day.hours.forEach((h, i) => {
         const hh = Number(h.datetime.slice(0, 2))
@@ -59,7 +66,6 @@ async function triggerScrollToCurrentHour() {
     }
 }
 
-/* Si las horas llegan/actualizan después y está abierto, vuelve a ajustar el scroll */
 watch(() => props.day?.hours, async () => {
     if (expanded.value) {
         hourEls.value = []
@@ -68,15 +74,21 @@ watch(() => props.day?.hours, async () => {
     }
 })
 
-/* Limpia refs al montar para evitar residuos si este componente se reusa */
 onMounted(async () => {
     hourEls.value = []
 })
+
+/* ===== Utilidades de representación por métrica ===== */
+function degToCompass(deg) {
+    if (deg == null || isNaN(deg)) return '—'
+    const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO']
+    return dirs[Math.round(deg / 22.5) % 16]
+}
 </script>
 
 <template>
     <Card class="weather-card compact">
-        <!-- CABECERA: clickable para abrir/cerrar -->
+        <!-- CABECERA -->
         <template #title>
             <button type="button" class="title-button flex align-items-center justify-content-between w-full"
                 @click="toggle" :aria-expanded="expanded" aria-controls="card-content">
@@ -99,20 +111,63 @@ onMounted(async () => {
             </button>
         </template>
 
-        <!-- CONTENIDO: oculto por defecto, se despliega con animación -->
+        <!-- CONTENIDO -->
         <template #content>
             <transition name="collapse">
                 <div v-show="expanded" id="card-content" class="content-wrap">
-                    <!-- carrusel horizontal por horas -->
-                    <div class="hours-scroller mt-1" aria-label="Predicción por horas">
+                    <!-- Tabs PrimeVue -->
+                    <TabView v-model:activeIndex="activeIndex" class="metric-tabs">
+                        <TabPanel v-for="(t, i) in tabs" :key="t.key" :header="t.label" />
+                    </TabView>
+
+                    <!-- Carrusel horizontal por horas -->
+                    <div class="hours-scroller mt-2" aria-label="Predicción por horas">
                         <div v-for="(h, idx) in (day.hours || []).slice(0, 24)" :key="idx" class="hour-pill"
                             :ref="el => { if (el) hourEls[idx] = el }">
                             <span class="hour">{{ h.datetime.slice(0, 5) }}</span>
-                            <img :src="h.icon" class="icon-hour" :alt="h.conditions" />
-                            <span class="temp">{{ Math.round(h.temp) }}°</span>
-                            <span class="pp" :title="'Prob. precipitación'">
-                                <i class="fa-solid fa-cloud-rain"></i>{{ Math.round(h.precipprob || 0) }}%
-                            </span>
+
+                            <!-- Contenido dinámico según pestaña seleccionada -->
+                            <template v-if="activeKey === 'temp'">
+                                <img :src="h.icon" class="icon-hour" :alt="h.conditions" />
+                                <span class="temp">{{ Math.round(h.temp) }}°</span>
+                                <span class="pp" :title="'Prob. precipitación'">
+                                    <i class="fa-solid fa-cloud-rain"></i>{{ Math.round(h.precipprob || 0) }}%
+                                </span>
+                            </template>
+
+                            <template v-else-if="activeKey === 'wind'">
+                                <i class="fa-solid fa-arrow-up big-icon" aria-hidden="true"
+                                    :style="{ transform: `rotate(${h.winddir}deg)`, margin: '6px auto' }">
+                                </i>
+                                <span class="val flex flex-column">
+                                    <span>{{ Math.round(h.windspeed ?? 0) }}</span>
+                                    <span>km/h</span>
+                                </span>
+                            </template>
+
+                            <template v-else-if="activeKey === 'rad'">
+                                <i class="fa-solid fa-sun big-icon" aria-hidden="true"
+                                    :style="{ margin: '6px auto' }"></i>
+                                <span class="val flex flex-column">
+                                    <span>{{ Math.round(h.solarradiation ?? 0) }}</span>
+                                    <span>W/m²</span>
+                                </span>
+                                <span class="pp" :title="'Índice UV'">
+                                    UV {{ Math.round(h.uvindex ?? 0) }}
+                                </span>
+                            </template>
+
+                            <template v-else> <!-- snow -->
+                                <i class="fa-regular fa-snowflake big-icon" aria-hidden="true"
+                                    :style="{ margin: '6px auto' }"></i>
+                                <span class="val flex flex-row" style="justify-content: center; gap: 1px;">
+                                    <span>{{ Math.round(h.snow ?? 0) }}</span>
+                                    <span>%</span>
+                                </span>
+                                <span class="pp" :title="'Espesor de nieve'">
+                                    {{ h.snowdepth ?? 0 }} mm
+                                </span>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -122,7 +177,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Botón accesible para el header (sin estilos de botón) */
 .title-button {
     all: unset;
     cursor: pointer;
@@ -130,7 +184,6 @@ onMounted(async () => {
     width: 100%;
 }
 
-/* Contenedor compacto y centrado, tope 350px */
 .weather-card.compact {
     width: 100%;
     max-width: 350px;
@@ -146,7 +199,6 @@ onMounted(async () => {
     display: initial;
 }
 
-/* Encabezado reducido */
 .temp-day {
     font-size: 1.8rem;
     font-weight: 800;
@@ -154,22 +206,13 @@ onMounted(async () => {
 }
 
 .temp-max {
-    /* alto énfasis en cualquier tema */
     color: var(--p-text-color, currentColor);
 }
 
 .temp-min {
-    /* secundario: se adapta a claro/oscuro */
     color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
 }
 
-.cond {
-    font-size: .75rem;
-    color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
-    margin-top: .15rem;
-}
-
-/* Animación colapsable */
 .collapse-enter-active,
 .collapse-leave-active {
     transition: max-height .28s ease, opacity .2s ease;
@@ -185,11 +228,9 @@ onMounted(async () => {
 .collapse-enter-to,
 .collapse-leave-from {
     max-height: 650px;
-    /* suficiente para horas + meta */
     opacity: 1;
 }
 
-/* Meta compacta */
 .meta {
     margin-top: .5rem;
     font-size: .8rem;
@@ -203,11 +244,8 @@ onMounted(async () => {
     flex-wrap: wrap;
 }
 
-.chip {
-    padding: 0 .4rem;
-    height: 1.35rem;
-    font-size: .7rem;
-    /* Tag hereda colores del tema Prime */
+.metric-tabs {
+    margin-top: .25rem;
 }
 
 /* Carrusel horas compacto */
@@ -217,11 +255,7 @@ onMounted(async () => {
     overflow-x: auto;
     padding: .25rem;
     scroll-snap-type: x proximity;
-
-    /* aire lógico al inicio para no “comer” la sombra al anclar */
     scroll-padding-left: 0.15rem;
-
-    /* scrollbar que se adapta al tema */
     scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
 }
 
@@ -240,15 +274,11 @@ onMounted(async () => {
     border-radius: 12px;
     padding: .4rem .35rem;
     text-align: center;
-
-    /* Borde y sombra neutros que funcionan en claro y oscuro */
     border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
     background: var(--p-content-background, var(--p-surface-0, #fff));
     box-shadow:
         0 2px 10px color-mix(in oklab, #000 12%, transparent),
         0 1px 0 color-mix(in oklab, #fff 6%, transparent);
-
-    /* margen lógico de snap (complementa scroll-padding) */
     scroll-margin-left: 0.15rem;
 }
 
@@ -264,12 +294,26 @@ onMounted(async () => {
     margin: .15rem auto;
 }
 
+.big-icon {
+    font-size: 1.25rem;
+    display: block;
+    margin: .1rem auto .2rem;
+}
+
 .hour {
     font-size: .7rem;
     color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
 }
 
 .temp {
+    display: block;
+    font-weight: 700;
+    font-size: .85rem;
+    margin-top: .05rem;
+    color: var(--p-text-color, currentColor);
+}
+
+.val {
     display: block;
     font-weight: 700;
     font-size: .85rem;
@@ -285,7 +329,7 @@ onMounted(async () => {
     color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
 }
 
-/* Ajustes para pantallas muy estrechas (≤320px) */
+/* Ajustes móviles */
 @media (max-width: 320px) {
     .temp-day {
         font-size: 1.35rem;
@@ -297,8 +341,20 @@ onMounted(async () => {
 }
 
 @media (prefers-color-scheme: dark) {
-    .weather-card.compact {
+    * {
         --p-content-background: #424242;
+        --p-tabview-tab-list-background: #424242;
+        --p-tabview-tab-panel-background: #424242;
     }
+}
+</style>
+
+<style>
+.p-tabview-tab-header {
+    padding: 5px 8px !important;
+}
+
+.p-tabview-panels {
+    display: none;
 }
 </style>
