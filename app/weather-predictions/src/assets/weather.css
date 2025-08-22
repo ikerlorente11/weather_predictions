@@ -1,0 +1,187 @@
+/* === Contenedor y cabecera === */
+.title-button {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    width: 100%;
+}
+
+.weather-list {
+    width: 100%;
+    max-width: 350px;
+}
+
+.weather-card.compact {
+    width: 100%;
+    margin: 0 auto;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--p-content-background, var(--p-surface-0, #fff));
+    color: var(--p-text-color, inherit);
+}
+
+/* En global no hace falta :deep */
+.p-card-body {
+    padding: 1.3rem;
+    display: initial;
+}
+
+.temp-day {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.temp-max {
+    color: var(--p-text-color, currentColor);
+}
+
+.temp-min {
+    color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
+}
+
+/* === Transiciones de colapso === */
+.collapse-enter-active,
+.collapse-leave-active {
+    transition: max-height .28s ease, opacity .2s ease;
+    overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+    max-height: 0;
+    opacity: 0;
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+    max-height: 650px;
+    opacity: 1;
+}
+
+/* === Meta info === */
+.meta {
+    margin-top: .5rem;
+    font-size: .8rem;
+}
+
+.meta.row {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    margin-top: .25rem;
+    flex-wrap: wrap;
+}
+
+.metric-tabs {
+    margin-top: .25rem;
+}
+
+/* === Carrusel horas === */
+.hours-scroller {
+    display: flex;
+    gap: .5rem;
+    overflow-x: auto;
+    padding: .25rem;
+    scroll-snap-type: x proximity;
+    scroll-padding-left: .15rem;
+    scrollbar-color: color-mix(in oklab, currentColor 30%, transparent) transparent;
+}
+
+.hours-scroller::-webkit-scrollbar {
+    height: 6px;
+}
+
+.hours-scroller::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, currentColor 30%, transparent);
+}
+
+.hour-pill {
+    min-width: 60px;
+    scroll-snap-align: start;
+    border-radius: 12px;
+    padding: .4rem .35rem;
+    text-align: center;
+    border: 1px solid color-mix(in oklab, currentColor 12%, transparent);
+    background: var(--p-content-background, var(--p-surface-0, #fff));
+    box-shadow:
+        0 2px 10px color-mix(in oklab, #000 12%, transparent),
+        0 1px 0 color-mix(in oklab, #fff 6%, transparent);
+    scroll-margin-left: .15rem;
+}
+
+.hour-pill:hover {
+    border-color: color-mix(in oklab, currentColor 20%, transparent);
+    box-shadow: 0 3px 14px color-mix(in oklab, #000 16%, transparent);
+}
+
+.icon-hour {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin: .15rem auto;
+}
+
+.big-icon {
+    font-size: 1.25rem;
+    display: block;
+    margin: .1rem auto .2rem;
+}
+
+.hour {
+    font-size: .7rem;
+    color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
+}
+
+.temp,
+.val {
+    display: block;
+    font-weight: 700;
+    font-size: .85rem;
+    margin-top: .05rem;
+    color: var(--p-text-color, currentColor);
+}
+
+.pp {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .65rem;
+    color: var(--p-text-color-secondary, color-mix(in oklab, currentColor 60%, transparent));
+}
+
+/* === Móviles === */
+@media (max-width:320px) {
+    .temp-day {
+        font-size: 1.35rem;
+    }
+
+    .hour-pill {
+        min-width: 56px;
+    }
+}
+
+/* === Modo oscuro (variables PrimeVue v4) === */
+@media (prefers-color-scheme: dark) {
+    * {
+        --p-content-background: #424242;
+        --p-tabs-tablist-background: #424242;
+        --p-tabs-tabpanel-background: #424242;
+        --p-tabs-tab-background: #424242;
+        --p-tabs-tab-active-background: #424242;
+        --p-tabs-tab-active-color: var(--p-text-color);
+        --p-tabs-nav-button-background: #424242;
+        --p-tabs-nav-button-shadow: 0px 0px 10px 1px color-mix(in srgb, var(--p-content-background), transparent 50%);
+        --p-tabs-nav-button-width: 1rem;
+    }
+}
+
+/* === Ajustes PrimeVue Tabs a nivel global === */
+.p-tab {
+    padding: 5px 11px !important;
+}
+
+.p-tabpanels {
+    display: none;
+}

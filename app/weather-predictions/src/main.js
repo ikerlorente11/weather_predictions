@@ -14,6 +14,8 @@ import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
+import './assets/weather.css'
+
 const app = createApp(App)
 app.use(PrimeVue, {
     theme: {
