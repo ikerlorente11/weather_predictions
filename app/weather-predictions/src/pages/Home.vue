@@ -1,3 +1,8 @@
+<!--
+  Home.vue
+  Página principal de la aplicación Weather Predictions.
+  Gestiona la selección de ciudad, carga de datos y muestra la lista de predicción.
+-->
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

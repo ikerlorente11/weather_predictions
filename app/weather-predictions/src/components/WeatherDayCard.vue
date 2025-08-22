@@ -1,3 +1,11 @@
+<!--
+    WeatherDayCard.vue
+    Tarjeta principal para mostrar la predicción de un día, con tabs y scroll de horas.
+    Props:
+        - day: Objeto con datos del día
+        - city: Nombre de la ciudad
+        - tz: Zona horaria
+-->
 <script setup>
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import Card from 'primevue/card'

@@ -1,3 +1,11 @@
+<!--
+    HourPill.vue
+    Muestra la información meteorológica de una hora concreta.
+    Props:
+        - hour: Objeto con datos de la hora
+        - activeKey: Métrica activa (temp, wind, rad, snow)
+        - refEl: Referencia para scroll
+-->
 <script setup>
 import { degToCompass } from './utils/dateUtils'
 

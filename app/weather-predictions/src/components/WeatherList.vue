@@ -1,3 +1,10 @@
+<!--
+    WeatherList.vue
+    Lista de tarjetas de predicción meteorológica por día.
+    Props:
+        - days: Array de objetos día
+        - city: Nombre de la ciudad
+-->
 <script setup>
 import WeatherDayCard from './WeatherDayCard.vue'
 

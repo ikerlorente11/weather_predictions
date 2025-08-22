@@ -1,3 +1,7 @@
+/**
+ * Punto de entrada principal de la aplicación Weather Predictions.
+ * Configura Vue, PrimeVue, temas y el router.
+ */
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -16,7 +20,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 
 import './assets/weather.css'
 
+// Crear la instancia principal de Vue
 const app = createApp(App)
+// Configurar PrimeVue con tema y opciones
 app.use(PrimeVue, {
     theme: {
         preset: Nora,
@@ -26,5 +32,7 @@ app.use(PrimeVue, {
     }
 })
 
+// Configurar el router
 app.use(router)
+// Montar la app en el DOM
 app.mount('#app')

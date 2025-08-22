@@ -1,3 +1,12 @@
+<!--
+    WeatherHeader.vue
+    Encabezado de la tarjeta de predicción diaria, muestra fecha, icono, amanecer y atardecer.
+    Props:
+        - day: Objeto con datos del día
+        - expanded: Booleano para mostrar detalles
+    Eventos:
+        - toggle: Alterna la expansión de la tarjeta
+-->
 <script setup>
 import { computed } from 'vue'
 import Avatar from 'primevue/avatar'

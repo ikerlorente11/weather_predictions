@@ -1,8 +1,22 @@
+<!--
+    CityDialog.vue
+    Diálogo para seleccionar ciudad, con autocompletado y selección de historial.
+    Props:
+        - visible: Controla la visibilidad del diálogo
+        - cities: Array de nombres de ciudades
+        - history: Array de ciudades recientes
+    Eventos:
+        - update:visible: Cambia la visibilidad
+        - confirm: Confirma la selección de ciudad
+        - selectHistory: Selecciona una ciudad del historial
+-->
 <script setup>
+
 import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import AutoComplete from 'primevue/autocomplete'
 import FloatLabel from 'primevue/floatlabel'
+
 
 const props = defineProps({
     visible: Boolean,
@@ -11,15 +25,30 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:visible', 'confirm', 'selectHistory'])
 
-// ✅ proxy local: se comporta como un v-model
+
+/**
+ * Proxy local para la visibilidad del diálogo, permite usar v-model.
+ */
 const modelVisible = computed({
     get: () => props.visible,
     set: (val) => emit('update:visible', val)
 })
 
+
+/**
+ * Valor del input de ciudad.
+ */
 const value = ref('')
+/**
+ * Sugerencias filtradas para el autocompletado.
+ */
 const suggestions = ref([])
 
+
+/**
+ * Filtra las ciudades según el texto introducido para autocompletar.
+ * @param {Object} event - Evento de autocompletado de PrimeVue.
+ */
 function search(event) {
     const query = event.query.toLowerCase()
     suggestions.value = props.cities.filter(c =>
@@ -27,6 +56,11 @@ function search(event) {
     )
 }
 
+
+/**
+ * Confirma la ciudad seleccionada y la envía al componente padre.
+ * Limpia el input tras confirmar.
+ */
 function confirmCity() {
     if (!value.value) return
     emit('confirm', value.value)

@@ -1,3 +1,12 @@
+<!--
+    WeatherTabs.vue
+    Componente de pestañas reutilizable para mostrar diferentes métricas meteorológicas.
+    Props:
+        - tabs: Array de objetos { label, key, value }
+        - active: Índice de la pestaña activa
+    Eventos:
+        - update:active: Emite el índice de la pestaña seleccionada
+-->
 <script setup>
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'

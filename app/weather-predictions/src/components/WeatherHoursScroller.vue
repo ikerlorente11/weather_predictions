@@ -1,3 +1,11 @@
+<!--
+    WeatherHoursScroller.vue
+    Scroller horizontal para mostrar las horas de un día.
+    Props:
+        - day: Objeto con datos del día
+        - activeKey: Métrica activa
+        - hourEls: Referencias a los elementos de hora
+-->
 <script setup>
 import HourPill from './HourPill.vue'
 
